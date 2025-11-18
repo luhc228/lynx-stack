@@ -65,6 +65,7 @@ export function applyEntry(
 
     chain.entryPoints.clear()
 
+    const backgroundChunks: string[] = []
     const mainThreadChunks: string[] = []
 
     Object.entries(entries).forEach(([entryName, entryPoint]) => {
@@ -107,6 +108,7 @@ export function applyEntry(
 
       const backgroundEntry = entryName
 
+      backgroundChunks.push(backgroundName)
       mainThreadChunks.push(mainThreadName)
 
       chain
@@ -186,6 +188,14 @@ export function applyEntry(
           cssPlugins: [],
         }])
         .end()
+    })
+
+    api.expose(Symbol.for('Lynx.plugin.LAYERS'), LAYERS)
+    api.expose(Symbol.for('Lynx.plugin.mainThreadChunks'), {
+      mainThreadChunks,
+    })
+    api.expose(Symbol.for('Lynx.plugin.backgroundChunks'), {
+      backgroundChunks,
     })
 
     const rsbuildConfig = api.getRsbuildConfig()

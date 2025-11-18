@@ -498,6 +498,16 @@ importers:
         specifier: 1.2.4
         version: 1.2.4(@rsbuild/core@1.5.17)(@rspack/core@1.6.1(@swc/helpers@0.5.17))(typescript@5.9.3)
 
+  packages/rspeedy/plugin-externals-bundle:
+    dependencies:
+      '@lynx-js/externals-loading-webpack-plugin':
+        specifier: workspace:*
+        version: link:../../webpack/externals-loading-webpack-plugin
+    devDependencies:
+      '@rsbuild/core':
+        specifier: catalog:rsbuild
+        version: 1.5.17
+
   packages/rspeedy/plugin-qrcode:
     devDependencies:
       '@clack/prompts':

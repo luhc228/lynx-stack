@@ -1,0 +1,16 @@
+{
+  "extends": ["../../../tsconfig.json"],
+  "compilerOptions": {
+    "composite": true,
+    "outDir": "./lib",
+    "baseUrl": "./",
+    "rootDir": "./src",
+    "stripInternal": false,
+
+    "types": [], /** Explicitly remove "node" and "DOM" */
+  },
+  "references": [
+    { "path": "../../webpack/externals-loading-webpack-plugin/tsconfig.build.json" },
+  ],
+  "include": ["src"],
+}

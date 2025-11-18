@@ -1,0 +1,54 @@
+{
+  "name": "@lynx-js/externals-bundle-rsbuild-plugin",
+  "version": "0.0.0",
+  "description": "A Rsbuild plugin for Lynx externals bundle",
+  "keywords": [
+    "externals",
+    "Lynx",
+    "bundle"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lynx-family/lynx-stack.git",
+    "directory": "packages/rspeedy/plugin-externals-bundle"
+  },
+  "license": "Apache-2.0",
+  "author": {
+    "name": "Hengchang Lu",
+    "email": "luhengchang228@gmail.com"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./lib/index.js",
+      "require": "./lib/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "types": "./lib/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "package.json": [
+        "package.json"
+      ]
+    }
+  },
+  "files": [
+    "lib",
+    "!lib/**/*.js.map",
+    "CHANGELOG.md",
+    "README.md"
+  ],
+  "scripts": {
+    "api-extractor": "api-extractor run --verbose"
+  },
+  "dependencies": {
+    "@lynx-js/externals-loading-webpack-plugin": "workspace:*"
+  },
+  "devDependencies": {
+    "@rsbuild/core": "catalog:rsbuild"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

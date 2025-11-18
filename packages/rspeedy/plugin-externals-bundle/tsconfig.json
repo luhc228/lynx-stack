@@ -1,0 +1,15 @@
+{
+  "extends": ["./tsconfig.build.json"],
+  "compilerOptions": {
+    "rootDir": ".",
+    "noEmit": true,
+  },
+  "include": [
+    "src",
+    "test",
+    "vitest.config.ts",
+  ],
+  "references": [
+    { "path": "../../webpack/externals-loading-webpack-plugin/tsconfig.build.json" },
+  ],
+}
