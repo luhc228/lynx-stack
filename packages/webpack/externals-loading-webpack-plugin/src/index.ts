@@ -214,6 +214,13 @@ export interface LayerOptions {
   sectionPath: string;
 }
 
+function getLynxExternalGlobal(layer: 'background' | 'mainThread') {
+  // We do not use `globalThis` in BTS to avoid issues when sharing js context is enabled
+  return `${
+    layer === 'background' ? 'lynxCoreInject.tt.lynx_ex' : 'globalThis.lynx_ex'
+  }`;
+}
+
 /**
  * The webpack plugin to load lynx external bundles.
  *
@@ -249,10 +256,6 @@ export interface LayerOptions {
  * @public
  */
 export class ExternalsLoadingPlugin {
-  static RuntimeGlobals = {
-    lynxExternals: '__webpack_require__.lynx_ex',
-  };
-
   constructor(private options: ExternalsLoadingPluginOptions) {}
 
   apply(compiler: Compiler): void {
@@ -315,8 +318,7 @@ export class ExternalsLoadingPlugin {
         if (externals.length === 0) {
           return '';
         }
-        const runtimeGlobalsInit =
-          `${ExternalsLoadingPlugin.RuntimeGlobals.lynxExternals} = {};`;
+        const runtimeGlobalsInit = `${getLynxExternalGlobal(layer)} = {};`;
         const loadExternalFunc = `
 function createLoadExternalAsync(handler, sectionPath) {
   return new Promise((resolve, reject) => {
@@ -384,7 +386,7 @@ function createLoadExternalSync(handler, sectionPath, timeout) {
 
           if (async) {
             asyncLoadCode.push(
-              `${ExternalsLoadingPlugin.RuntimeGlobals.lynxExternals}[${
+              `${getLynxExternalGlobal(layer)}[${
                 JSON.stringify(libraryNameStr)
               }] = createLoadExternalAsync(handler${i}, ${
                 JSON.stringify(layerOptions.sectionPath)
@@ -394,7 +396,7 @@ function createLoadExternalSync(handler, sectionPath, timeout) {
           }
 
           syncLoadCode.push(
-            `${ExternalsLoadingPlugin.RuntimeGlobals.lynxExternals}[${
+            `${getLynxExternalGlobal(layer)}[${
               JSON.stringify(libraryNameStr)
             }] = createLoadExternalSync(handler${i}, ${
               JSON.stringify(layerOptions.sectionPath)
@@ -468,7 +470,7 @@ function createLoadExternalSync(handler, sectionPath, timeout) {
         return callback(
           undefined,
           [
-            ExternalsLoadingPlugin.RuntimeGlobals.lynxExternals,
+            getLynxExternalGlobal(currentLayer),
             ...(Array.isArray(libraryName) ? libraryName : [libraryName]),
           ],
           isAsync ? 'promise' : undefined,

@@ -54,21 +54,39 @@ export default defineExternalBundleRslibConfig({
   },
   output: {
     cleanDistPath: false,
-    externals: {
-      '@lynx-js/react': 'var __webpack_require__.lynx_ex.ReactLynx.React',
-      '@lynx-js/react/internal':
-        'var __webpack_require__.lynx_ex.ReactLynx.ReactInternal',
-      '@lynx-js/react/experimental/lazy/import':
-        'var __webpack_require__.lynx_ex.ReactLynx.ReactLazyImport',
-      '@lynx-js/react/legacy-react-runtime':
-        'var __webpack_require__.lynx_ex.ReactLynx.ReactLegacyRuntime',
-      '@lynx-js/react/runtime-components':
-        'var __webpack_require__.lynx_ex.ReactLynx.ReactComponents',
-      '@lynx-js/react/worklet-runtime/bindings':
-        'var __webpack_require__.lynx_ex.ReactLynx.ReactWorkletRuntime',
-      '@lynx-js/react/debug':
-        'var __webpack_require__.lynx_ex.ReactLynx.ReactDebug',
-      'preact': 'var __webpack_require__.lynx_ex.ReactLynx.Preact',
+    externals({ request, contextInfo }, callback) {
+      if (!request) return callback();
+      const libraryName0 = 'ReactLynx';
+      const mapPkg2LibraryName1 = {
+        '@lynx-js/react': 'React',
+        '@lynx-js/react/internal': 'ReactInternal',
+        '@lynx-js/react/experimental/lazy/import': 'ReactLazyImport',
+        '@lynx-js/react/legacy-react-runtime': 'ReactLegacyRuntime',
+        '@lynx-js/react/runtime-components': 'ReactComponents',
+        '@lynx-js/react/worklet-runtime/bindings': 'ReactWorkletRuntime',
+        '@lynx-js/react/debug': 'ReactDebug',
+        'preact': 'Preact',
+      };
+
+      if (!(request in mapPkg2LibraryName1)) return callback();
+      const libraryName1 =
+        mapPkg2LibraryName1[request as keyof typeof mapPkg2LibraryName1];
+      if (contextInfo?.issuerLayer === LAYERS.MAIN_THREAD) {
+        callback(undefined, [
+          'globalThis',
+          'lynx_ex',
+          libraryName0,
+          libraryName1,
+        ], 'var');
+      } else {
+        callback(undefined, [
+          'lynxCoreInject',
+          'tt',
+          'lynx_ex',
+          libraryName0,
+          libraryName1,
+        ], 'var');
+      }
     },
     minify: false,
   },
