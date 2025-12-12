@@ -22,10 +22,12 @@ export default defineExternalBundleRslibConfig({
       module: {
         rules: [
           {
+            test: /\.(?:js|jsx|mjs|cjs|ts|tsx|mts|cts)$/,
             issuerLayer: LAYERS.BACKGROUND,
             loader: ReactWebpackPlugin.loaders.BACKGROUND,
           },
           {
+            test: /\.(?:js|jsx|mjs|cjs|ts|tsx|mts|cts)$/,
             issuerLayer: LAYERS.MAIN_THREAD,
             loader: ReactWebpackPlugin.loaders.MAIN_THREAD,
           },
@@ -54,39 +56,25 @@ export default defineExternalBundleRslibConfig({
   },
   output: {
     cleanDistPath: false,
-    externals({ request, contextInfo }, callback) {
-      if (!request) return callback();
-      const libraryName0 = 'ReactLynx';
-      const mapPkg2LibraryName1 = {
-        '@lynx-js/react': 'React',
-        '@lynx-js/react/internal': 'ReactInternal',
-        '@lynx-js/react/experimental/lazy/import': 'ReactLazyImport',
-        '@lynx-js/react/legacy-react-runtime': 'ReactLegacyRuntime',
-        '@lynx-js/react/runtime-components': 'ReactComponents',
-        '@lynx-js/react/worklet-runtime/bindings': 'ReactWorkletRuntime',
-        '@lynx-js/react/debug': 'ReactDebug',
-        'preact': 'Preact',
-      };
-
-      if (!(request in mapPkg2LibraryName1)) return callback();
-      const libraryName1 =
-        mapPkg2LibraryName1[request as keyof typeof mapPkg2LibraryName1];
-      if (contextInfo?.issuerLayer === LAYERS.MAIN_THREAD) {
-        callback(undefined, [
-          'globalThis',
-          'lynx_ex',
-          libraryName0,
-          libraryName1,
-        ], 'var');
-      } else {
-        callback(undefined, [
-          'lynxCoreInject',
-          'tt',
-          'lynx_ex',
-          libraryName0,
-          libraryName1,
-        ], 'var');
-      }
+    dataUriLimit: Number.POSITIVE_INFINITY,
+    externals: {
+      '@lynx-js/react': ['ReactLynx', 'React'],
+      '@lynx-js/react/internal': ['ReactLynx', 'ReactInternal'],
+      '@lynx-js/react/experimental/lazy/import': [
+        'ReactLynx',
+        'ReactLazyImport',
+      ],
+      '@lynx-js/react/legacy-react-runtime': [
+        'ReactLynx',
+        'ReactLegacyRuntime',
+      ],
+      '@lynx-js/react/runtime-components': ['ReactLynx', 'ReactComponents'],
+      '@lynx-js/react/worklet-runtime/bindings': [
+        'ReactLynx',
+        'ReactWorkletRuntime',
+      ],
+      '@lynx-js/react/debug': ['ReactLynx', 'ReactDebug'],
+      'preact': ['ReactLynx', 'Preact'],
     },
     minify: false,
   },

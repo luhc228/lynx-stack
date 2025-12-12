@@ -72,7 +72,7 @@ export default defineConfig({
               mainThread: { sectionPath: 'ReactLynx__main-thread' },
               async: false,
             },
-            './App.jsx': {
+            './App.js': {
               libraryName: 'CompLib',
               url: `${EXTERNAL_BUNDLE_PREFIX}/comp-lib.lynx.bundle`,
               background: { sectionPath: 'CompLib' },

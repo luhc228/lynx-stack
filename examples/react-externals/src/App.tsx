@@ -1,12 +1,9 @@
 import { useCallback, useEffect, useState } from '@lynx-js/react';
 
-// import './App.css';
-// import arrow from './assets/arrow.png';
-// import lynxLogo from './assets/lynx-logo.png';
-// import reactLynxLogo from './assets/react-logo.png';
-const arrow = 'TODO: support png in external bundles';
-const lynxLogo = 'TODO: support png in external bundles';
-const reactLynxLogo = 'TODO: support png in external bundles';
+import './App.css';
+import arrow from './assets/arrow.png';
+import lynxLogo from './assets/lynx-logo.png';
+import reactLynxLogo from './assets/react-logo.png';
 
 export function App() {
   const [alterLogo, setAlterLogo] = useState(false);
