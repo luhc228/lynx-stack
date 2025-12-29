@@ -33,11 +33,18 @@ export class MainThreadRuntimeWrapperWebpackPlugin {
     new BannerPlugin({
       test: this.options.test ?? /\.js$/,
       raw: true,
+      stage: compiler.webpack.Compilation.PROCESS_ASSETS_STAGE_ADDITIONAL,
       banner: `(function () {
-  // TODO: remove this after \`useModuleWrapper\` supports MTS
+  // TODO: Support lazy bundle
   var globDynamicComponentEntry = '__Card__';
-  const module = { exports: {} }
-  const exports = module.exports`,
+  if (typeof module === 'undefined') {
+    module = { exports: {} };
+  }
+  if (typeof exports === 'undefined') {
+    exports = module.exports;
+  }
+  console.log(module, exports)
+`,
     }).apply(compiler)
     new BannerPlugin({
       test: this.options.test ?? /\.js$/,

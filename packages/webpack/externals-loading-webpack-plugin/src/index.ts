@@ -308,7 +308,7 @@ function createLoadExternalAsync(handler, sectionPath) {
     handler.then((response) => {
       if (response.code === 0) {
         try {
-          const result = lynx.loadScript(sectionPath, { bundleName: response.url });
+          const result = lynx.loadScript(sectionPath, { bundleName: response.url, useModuleWrapper: true });
           resolve(result)
         } catch (error) {
           reject(new Error('Failed to load script ' + sectionPath + ' in ' + response.url, { cause: error }))
@@ -323,7 +323,7 @@ function createLoadExternalSync(handler, sectionPath, timeout) {
   const response = handler.wait(timeout)
   if (response.code === 0) {
     try  {
-      const result = lynx.loadScript(sectionPath, { bundleName: response.url });
+      const result = lynx.loadScript(sectionPath, { bundleName: response.url, useModuleWrapper: true });
       return result
     } catch (error) {
       throw new Error('Failed to load script ' + sectionPath + ' in ' + response.url, { cause: error })
