@@ -2,6 +2,9 @@ import '@lynx-js/react/debug';
 import { root } from '@lynx-js/react';
 
 import { App } from './App.js';
+// import * as utils from 'utils'
+
+// console.log('====>', __BACKGROUND__, utils)
 
 // We have to manually import the css now
 // TODO: load css from external bundle

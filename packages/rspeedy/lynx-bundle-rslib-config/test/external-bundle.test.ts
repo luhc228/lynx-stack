@@ -153,6 +153,36 @@ describe('should build external bundle', () => {
     expect(decodedResult['engine-version']).toBe('3.5')
   })
 
+  it('should only build main-thread code when engineVersion >= 3.6', async () => {
+    const rslibConfig = defineExternalBundleRslibConfig({
+      source: {
+        entry: {
+          utils: path.join(__dirname, './fixtures/utils-lib/index.ts'),
+        },
+      },
+      id: 'utils-engineVersion-36',
+      output: {
+        distPath: {
+          root: path.join(fixtureDir, 'dist'),
+        },
+      },
+    }, {
+      engineVersion: '3.6',
+    })
+
+    await build(rslibConfig)
+
+    const decodedResult = await decodeTemplate(
+      path.join(fixtureDir, 'dist/utils-engineVersion-36.lynx.bundle'),
+    )
+    // Should only have one entry (main-thread), not two
+    expect(Object.keys(decodedResult['custom-sections'])).toEqual(['utils'])
+    // Should not have .define() in the code (main-thread doesn't use .define)
+    expect(decodedResult['custom-sections']['utils']?.includes('.define('))
+      .toBeFalsy()
+    expect(decodedResult['engine-version']).toBe('3.6')
+  })
+
   it('override the default syntax to es2023', async () => {
     const rslibConfig = defineExternalBundleRslibConfig({
       source: {

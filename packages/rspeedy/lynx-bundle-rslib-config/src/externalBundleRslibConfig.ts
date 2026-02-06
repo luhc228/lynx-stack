@@ -193,13 +193,15 @@ export function defineExternalBundleRslibConfig(
       ),
     ],
     plugins: [
-      externalBundleEntryRsbuildPlugin(),
+      externalBundleEntryRsbuildPlugin(encodeOptions.engineVersion),
       externalBundleRsbuildPlugin(encodeOptions.engineVersion),
     ],
   }
 }
 
-const externalBundleEntryRsbuildPlugin = (): rsbuild.RsbuildPlugin => ({
+const externalBundleEntryRsbuildPlugin = (
+  engineVersion: string | undefined,
+): rsbuild.RsbuildPlugin => ({
   name: 'lynx:external-bundle-entry',
   setup(api) {
     api.modifyBundlerChain((chain) => {
@@ -210,6 +212,9 @@ const externalBundleEntryRsbuildPlugin = (): rsbuild.RsbuildPlugin => ({
 
       const backgroundEntryName: string[] = []
       const mainThreadEntryName: string[] = []
+
+      // Check if engineVersion >= 3.6, if so, only use main-thread layer
+      const shouldUseOnlyMainThread = Number(engineVersion ?? '3.5') >= 3.6
 
       const addLayeredEntry = (
         entryName: string,
@@ -226,18 +231,27 @@ const externalBundleEntryRsbuildPlugin = (): rsbuild.RsbuildPlugin => ({
 
         for (const value of entryPointValue) {
           if (typeof value === 'string' || Array.isArray(value)) {
-            const mainThreadEntry = `${entryName}__main-thread`
-            const backgroundEntry = entryName
-            mainThreadEntryName.push(mainThreadEntry)
-            backgroundEntryName.push(backgroundEntry)
-            addLayeredEntry(mainThreadEntry, {
-              import: value,
-              layer: LAYERS.MAIN_THREAD,
-            })
-            addLayeredEntry(backgroundEntry, {
-              import: value,
-              layer: LAYERS.BACKGROUND,
-            })
+            if (shouldUseOnlyMainThread) {
+              // For engineVersion >= 3.6, only create main-thread entry
+              mainThreadEntryName.push(entryName)
+              addLayeredEntry(entryName, {
+                import: value,
+                layer: LAYERS.MAIN_THREAD,
+              })
+            } else {
+              const mainThreadEntry = `${entryName}__main-thread`
+              const backgroundEntry = entryName
+              mainThreadEntryName.push(mainThreadEntry)
+              backgroundEntryName.push(backgroundEntry)
+              addLayeredEntry(mainThreadEntry, {
+                import: value,
+                layer: LAYERS.MAIN_THREAD,
+              })
+              addLayeredEntry(backgroundEntry, {
+                import: value,
+                layer: LAYERS.BACKGROUND,
+              })
+            }
           } else {
             // object
             const { layer } = value
@@ -248,22 +262,43 @@ const externalBundleEntryRsbuildPlugin = (): rsbuild.RsbuildPlugin => ({
                 layer: LAYERS.MAIN_THREAD,
               })
             } else if (layer === LAYERS.BACKGROUND) {
-              backgroundEntryName.push(entryName)
-              addLayeredEntry(entryName, { ...value, layer: LAYERS.BACKGROUND })
+              if (shouldUseOnlyMainThread) {
+                // For engineVersion >= 3.6, convert background to main-thread
+                mainThreadEntryName.push(entryName)
+                addLayeredEntry(entryName, {
+                  ...value,
+                  layer: LAYERS.MAIN_THREAD,
+                })
+              } else {
+                backgroundEntryName.push(entryName)
+                addLayeredEntry(entryName, {
+                  ...value,
+                  layer: LAYERS.BACKGROUND,
+                })
+              }
             } else {
               // not specify layer
-              const mainThreadEntry = `${entryName}__main-thread`
-              const backgroundEntry = entryName
-              mainThreadEntryName.push(mainThreadEntry)
-              backgroundEntryName.push(backgroundEntry)
-              addLayeredEntry(mainThreadEntry, {
-                ...value,
-                layer: LAYERS.MAIN_THREAD,
-              })
-              addLayeredEntry(backgroundEntry, {
-                ...value,
-                layer: LAYERS.BACKGROUND,
-              })
+              if (shouldUseOnlyMainThread) {
+                // For engineVersion >= 3.6, only create main-thread entry
+                mainThreadEntryName.push(entryName)
+                addLayeredEntry(entryName, {
+                  ...value,
+                  layer: LAYERS.MAIN_THREAD,
+                })
+              } else {
+                const mainThreadEntry = `${entryName}__main-thread`
+                const backgroundEntry = entryName
+                mainThreadEntryName.push(mainThreadEntry)
+                backgroundEntryName.push(backgroundEntry)
+                addLayeredEntry(mainThreadEntry, {
+                  ...value,
+                  layer: LAYERS.MAIN_THREAD,
+                })
+                addLayeredEntry(backgroundEntry, {
+                  ...value,
+                  layer: LAYERS.BACKGROUND,
+                })
+              }
             }
           }
         }
@@ -276,11 +311,17 @@ const externalBundleEntryRsbuildPlugin = (): rsbuild.RsbuildPlugin => ({
           test: mainThreadEntryName.map((name) => new RegExp(`${escapeRegex(name)}\\.js$`)),
         }])
         .end()
-        .plugin(BackgroundRuntimeWrapperWebpackPlugin.name)
-        .use(BackgroundRuntimeWrapperWebpackPlugin, [{
-          test: backgroundEntryName.map((name) => new RegExp(`${escapeRegex(name)}\\.js$`)),
-        }])
-        .end()
+
+      // Only add background wrapper if there are background entries
+      if (backgroundEntryName.length > 0) {
+        // dprint-ignore
+        chain
+          .plugin(BackgroundRuntimeWrapperWebpackPlugin.name)
+          .use(BackgroundRuntimeWrapperWebpackPlugin, [{
+            test: backgroundEntryName.map((name) => new RegExp(`${escapeRegex(name)}\\.js$`)),
+          }])
+          .end()
+      }
     })
   },
 })

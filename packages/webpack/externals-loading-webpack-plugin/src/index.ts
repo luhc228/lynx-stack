@@ -80,6 +80,16 @@ export interface ExternalsLoadingPluginOptions {
     string,
     ExternalValue
   >;
+
+  /**
+   * The version of the Lynx engine.
+   *
+   * @remarks
+   * Minimum required version is 3.5.
+   *
+   * @defaultValue `'3.5'`
+   */
+  engineVersion?: string;
 }
 
 /**
@@ -274,6 +284,10 @@ export class ExternalsLoadingPlugin {
       ): string {
         const fetchCode: string[] = [];
         const loadCode: string[] = [];
+
+        // Parse engineVersion and determine if useModuleWrapper should be used
+        const shouldUseModuleWrapper =
+          Number(externalsLoadingPluginOptions.engineVersion ?? '3.5') >= 3.6;
         // filter duplicate externals by libraryName or package name to avoid loading the same external multiple times. We keep the last one.
         const externalsMap = new Map<
           string | string[],
@@ -302,13 +316,16 @@ export class ExternalsLoadingPlugin {
           return '';
         }
         const runtimeGlobalsInit = `${getLynxExternalGlobal()} = {};`;
+        const loadScriptOptions = shouldUseModuleWrapper
+          ? '{ bundleName: response.url, useModuleWrapper: true }'
+          : '{ bundleName: response.url }';
         const loadExternalFunc = `
 function createLoadExternalAsync(handler, sectionPath) {
   return new Promise((resolve, reject) => {
     handler.then((response) => {
       if (response.code === 0) {
         try {
-          const result = lynx.loadScript(sectionPath, { bundleName: response.url, useModuleWrapper: true });
+          const result = lynx.loadScript(sectionPath, ${loadScriptOptions});
           resolve(result)
         } catch (error) {
           reject(new Error('Failed to load script ' + sectionPath + ' in ' + response.url, { cause: error }))
@@ -323,7 +340,7 @@ function createLoadExternalSync(handler, sectionPath, timeout) {
   const response = handler.wait(timeout)
   if (response.code === 0) {
     try  {
-      const result = lynx.loadScript(sectionPath, { bundleName: response.url, useModuleWrapper: true });
+      const result = lynx.loadScript(sectionPath, ${loadScriptOptions});
       return result
     } catch (error) {
       throw new Error('Failed to load script ' + sectionPath + ' in ' + response.url, { cause: error })
