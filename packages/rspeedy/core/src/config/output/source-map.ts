@@ -78,7 +78,7 @@ export interface SourceMap {
    *
    * @remarks
    *
-   * Defaults to `false`.
+   * Defaults to `true`.
    *
    * @example
    *

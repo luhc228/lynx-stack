@@ -1,6 +1,12 @@
 // Copyright 2024 The Lynx Authors. All rights reserved.
 // Licensed under the Apache License Version 2.0 that can be found in the
 // LICENSE file in the root directory of this source tree.
+import {
+  addSegment,
+  GenMapping,
+  setSourceContent,
+  toEncodedMap,
+} from '@jridgewell/gen-mapping';
 import { describe, expect, test } from 'vitest';
 
 import type { LynxStyleNode } from '../src';
@@ -413,6 +419,91 @@ describe('CSS', () => {
       expect(cssMap[0]?.[0]).toHaveProperty('variables', {
         '--foo': 'red',
         '--bar': 'blue',
+      });
+    });
+
+    test('preserves bundle locations after debundle', () => {
+      const { cssMap } = cssChunksToMap(
+        [
+          `\
+.root {
+  color: red;
+}
+
+@cssId "1000" "foo.css" {
+  .foo {
+    color: blue;
+  }
+}
+
+.tail {
+  color: green;
+}
+`,
+        ],
+        [CSSPlugins.parserPlugins.removeFunctionWhiteSpace()],
+        true,
+      );
+
+      expect(cssMap[1]?.[0]).toMatchObject({
+        type: 'StyleRule',
+        selectorText: {
+          value: '.foo',
+          loc: {
+            line: 6,
+          },
+        },
+        style: [
+          {
+            name: 'color',
+            keyLoc: {
+              line: 7,
+            },
+            valLoc: {
+              line: 7,
+            },
+          },
+        ],
+      });
+    });
+
+    test('keeps bundle locations with css source map', () => {
+      const source = 'file:///src/foo.css';
+      const { cssMap, cssSource } = cssChunksToMap(
+        [{
+          content: `\
+@cssId "1000" "foo.css" {
+  .foo {
+    color: blue;
+  }
+}
+`,
+          sourceMap: createCSSSourceMap(source),
+        }],
+        [CSSPlugins.parserPlugins.removeFunctionWhiteSpace()],
+        true,
+      );
+
+      expect(cssSource[1]).toBe('/cssId/1.css');
+      expect(cssMap[1]?.[0]).toMatchObject({
+        type: 'StyleRule',
+        selectorText: {
+          value: '.foo',
+          loc: {
+            line: 2,
+          },
+        },
+        style: [
+          {
+            name: 'color',
+            keyLoc: {
+              line: 3,
+            },
+            valLoc: {
+              line: 3,
+            },
+          },
+        ],
       });
     });
   });
@@ -875,4 +966,22 @@ function getAllSelectors(nodes: LynxStyleNode[] | undefined): string[] {
   return nodes
     ?.filter(node => node.type === 'StyleRule')
     .map(styleRule => styleRule.selectorText.value) ?? [];
+}
+
+function createCSSSourceMap(source: string) {
+  const sourceContent = `\
+.foo {
+  color: blue;
+}
+`;
+  const map = new GenMapping({
+    file: '/bundle.css',
+  });
+
+  setSourceContent(map, source, sourceContent);
+  addSegment(map, 1, 2, source, 0, 0);
+  addSegment(map, 2, 4, source, 1, 2);
+  addSegment(map, 2, 15, source, 1, 13);
+
+  return toEncodedMap(map);
 }

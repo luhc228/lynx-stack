@@ -36,6 +36,7 @@
     "test": "pnpm vitest --project webpack/template"
   },
   "dependencies": {
+    "@jridgewell/trace-mapping": "^0.3.29",
     "@lynx-js/css-serializer": "workspace:*",
     "@lynx-js/tasm": "0.0.26",
     "@lynx-js/web-core": "workspace:*",
