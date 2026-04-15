@@ -26,6 +26,7 @@
     "css-tree": "^3.1.0"
   },
   "devDependencies": {
+    "@jridgewell/gen-mapping": "^0.3.12",
     "@types/css-tree": "^2.3.11"
   }
 }

@@ -410,6 +410,17 @@ export class LynxTemplatePlugin {
    * @param options - The encode options.
    * @returns The CSS map and css source.
    *
+   * @remarks
+   *
+   * When a CSS source map is provided, the generated `loc` fields will be
+   * remapped to original source coordinates when possible.
+   *
+   * `cssSource` is still keyed by `cssId`, so each stylesheet can only expose a
+   * single filename. If one debundled stylesheet is composed from multiple
+   * source files, `loc` can still point to the correct source line/column, but
+   * `cssSource` will fall back to `/cssId/<id>.css` instead of a real source
+   * filename.
+   *
    * @example
    * ```
    * (console.log(await convertCSSChunksToMap(
@@ -422,7 +433,12 @@ export class LynxTemplatePlugin {
    * ```
    */
   static convertCSSChunksToMap(
-    cssChunks: string[],
+    cssChunks: Array<
+      string | {
+        content: string;
+        sourceMap?: CSS.CSSSourceMap | undefined;
+      }
+    >,
     plugins: CSS.Plugin[],
     enableCSSSelector: boolean,
   ): {
@@ -753,7 +769,10 @@ class LynxTemplatePluginImpl {
       assetsInfoByGroups.css
         .map(chunk => compilation.getAsset(chunk.name))
         .filter((v): v is Asset => !!v)
-        .map(asset => asset.source.source().toString()),
+        .map(asset => ({
+          content: asset.source.source().toString(),
+          sourceMap: normalizeCSSSourceMap(asset.source.map?.()),
+        })),
       cssPlugins,
       enableCSSSelector,
     );
@@ -1028,6 +1047,29 @@ class LynxTemplatePluginImpl {
 
   #options: Required<LynxTemplatePluginOptions>;
 }
+
+function normalizeCSSSourceMap(
+  sourceMap: ReturnType<Asset['source']['map']> | undefined,
+): CSS.CSSSourceMap | undefined {
+  if (!sourceMap || Array.isArray(sourceMap)) {
+    return undefined;
+  }
+
+  return sourceMap as CSS.CSSSourceMap;
+}
+
+// function getMainCSSSourceMap(
+//   cssAssets: Asset[],
+// ): CSS.CSSSourceMap | undefined {
+//   for (const asset of cssAssets) {
+//     const sourceMap = normalizeCSSSourceMap(asset.source.map?.());
+//     if (sourceMap) {
+//       return sourceMap;
+//     }
+//   }
+
+//   return undefined;
+// }
 
 interface AssetsInformationByGroups {
   backgroundThread: Asset[];
